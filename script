@@ -1,15 +1,40 @@
---ссылка на наше хранилище ServerStorage
 local serverstorage = game:GetService("ServerStorage")
 --хранилище всех карт
 local maps = serverstorage:WaitForChild("Maps")
 local mapholder = game.Workspace:WaitForChild("MapHolder")
 
-local roundTimer = 60 * 5
+local roundTimer = 60 * 2
 local replicatedstorage = game:GetService("ReplicatedStorage")
 local statustag = replicatedstorage:WaitForChild("StatusTag")
 local timertag = replicatedstorage:WaitForChild("TimerTag")
 local event = replicatedstorage:WaitForChild("RemoteEvent")
-local lobbyTimer = 20
+local lobbyTimer = 10
+
+
+local MarketplaceService = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
+local gamepassId = 85285598 --(Айди пишем свой!)
+
+local function giveJumpPower(player)
+	if player.Character then	
+		local humanoid = player.Character:FindFirstChild("Humanoid")			
+		humanoid.JumpPower = 100		
+	end
+end
+
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, wasPurcased)
+	if wasPurcased then
+		giveJumpPower(player)
+		event:FireClient(player, "CoolGun")
+	end
+end)
+
+game.Players.PlayerAdded:Connect(function(player)	
+	wait(1)
+	if MarketplaceService:UserOwnsGamePassAsync(player.UserId, gamepassId) then
+		giveJumpPower(player)
+	end
+end)
 
 while true do
 	statustag.Value = "Loading Map"
@@ -25,7 +50,8 @@ while true do
 	--загружаем рандомную карту на сцену
 	newmap.Parent = game.Workspace.MapHolder
 	--ждем, чтобы все прогрузилось
-	wait(2)
+	wait(20)
+	
 	while true do	
 		wait(5)
 		
@@ -85,9 +111,18 @@ while true do
 					if player == murder then
 						local sword = serverstorage:WaitForChild("KodlandSword"):clone()
 						sword.Parent = backpack
+						event:FireClient(player, "Class", "Murder")
+						
 					elseif player == sheriff then
 						local netgun = serverstorage:WaitForChild("NetKodland"):clone()
 						netgun.Parent = backpack
+						event:FireClient(player, "Class", "Sheriff")
+						if MarketplaceService:UserOwnsGamePassAsync(player.UserId, gamepassId) then
+							event:FireClient(player, "CoolGun")
+						end
+					else
+						event:FireClient(player, "Class", "Player")
+						
 					end
 				end
 			end
@@ -100,7 +135,6 @@ while true do
 		wait(1)
 		localtimer = localtimer - 1
 		timertag.Value = localtimer
-		-----------------------------------------
 		--Заносим активных игроков в таблицу
 		activeplayers = {}
 		--Создаем переменную, которая будет определять остался ли охотник в игре
@@ -123,6 +157,24 @@ while true do
 			break
 		end	
 	end
+	
+	--Если охотник в игре
+	if murderactive then
+		--и если игроков осталось больше двух,то
+		if #activeplayers >=2 then
+			--Передаём серверу событие указывающее на выйгрыш мирных
+			event:FireAllClients("Result", "PlayersWin")
+		else
+			--иначе, если игроков менее 2ух, то Передаём серверу событие указывающее на выйгрыш охотника
+			event:FireAllClients("Result", "MurderWin")
+		end
+	--Иначе, если охотника нет в игре по окончанию матча	
+	else
+		--Передаём серверу событие указывающее на выйгрыш мирных
+		event:FireAllClients("Result", "PlayersWin")
+	end
+	
+	
 	--Создаем массив спаунов в лобби и заполняем его
 	local lobbyspawns = {}
 	for i, teleports in pairs(game.Workspace:WaitForChild("Lobby"):GetChildren()) do
