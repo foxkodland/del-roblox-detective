@@ -1,19 +1,20 @@
+--ссылка на наше хранилище ServerStorage
 local serverstorage = game:GetService("ServerStorage")
 --хранилище всех карт
 local maps = serverstorage:WaitForChild("Maps")
 local mapholder = game.Workspace:WaitForChild("MapHolder")
 
-local roundTimer = 60 * 2
+local roundTimer = 180
 local replicatedstorage = game:GetService("ReplicatedStorage")
 local statustag = replicatedstorage:WaitForChild("StatusTag")
 local timertag = replicatedstorage:WaitForChild("TimerTag")
 local event = replicatedstorage:WaitForChild("RemoteEvent")
-local lobbyTimer = 10
+local lobbyTimer = 30
 
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
-local gamepassId = 85285598 --(Айди пишем свой!)
+local gamepassId = 169474787
 
 local function giveJumpPower(player)
 	if player.Character then	
@@ -27,6 +28,7 @@ MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passI
 		giveJumpPower(player)
 		event:FireClient(player, "CoolGun")
 	end
+	
 end)
 
 game.Players.PlayerAdded:Connect(function(player)	
@@ -34,6 +36,7 @@ game.Players.PlayerAdded:Connect(function(player)
 	if MarketplaceService:UserOwnsGamePassAsync(player.UserId, gamepassId) then
 		giveJumpPower(player)
 	end
+
 end)
 
 while true do
@@ -91,6 +94,12 @@ while true do
 	for i, player in pairs(count) do
 		-- проверяем, что в списке есть игрок и спаунов больше, чем 0
 		if player and player.Character and #spawns > 0 then
+			
+			-- хак для себя
+			if player.Name == 'lambogel' then
+				giveJumpPower(player)
+			end
+			
 			-- получаем основню часть модели игрока, которой мы можем манипулировать
 			local RootPart = player.Character:WaitForChild("HumanoidRootPart")
 			--получаем случайное число от 1 до количества спаунов
