@@ -1,1 +1,0 @@
-local part = script.Parent
